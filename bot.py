@@ -178,21 +178,24 @@ def get_user_file_limit(user_id):
 # ================= UI / MENUS =================
 def get_reply_keyboard(user_id):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    markup.add(types.KeyboardButton('📤 Upload File'), types.KeyboardButton('📂 Check Files'))
-    markup.add(types.KeyboardButton('👤 My Profile'), types.KeyboardButton('💳 Subscription'))
+    markup.add(types.KeyboardButton('📤 Upload File', style='primary'), types.KeyboardButton('📂 Check Files', style='primary'))
+    markup.add(types.KeyboardButton('👤 My Profile', style='success'), types.KeyboardButton('💳 Subscription', style='success'))
     markup.add(types.KeyboardButton('❓ Help'), types.KeyboardButton('📖 How to Use')) 
     if user_id == OWNER_ID:
-        markup.add(types.KeyboardButton('👑 Admin Panel'))
+        markup.add(types.KeyboardButton('👑 Admin Panel', style='danger'))
     return markup
 
 def fsub_markup():
     markup = types.InlineKeyboardMarkup()
     for ch in FORCE_JOIN_CHANNELS:
+        ch = ch.strip()
+        if not ch: continue
         markup.add(types.InlineKeyboardButton(
             f"📢 Join {ch}",
-            url=f"https://t.me/{ch.replace('@','')}"
+            url=f"https://t.me/{ch.replace('@','')}",
+            style="primary"
         ))
-    markup.add(types.InlineKeyboardButton("✅ Verify & Continue", callback_data="check_join"))
+    markup.add(types.InlineKeyboardButton("✅ Verify & Continue", callback_data="check_join", style="success"))
     return markup
 
 def check_fsub(user_id):
@@ -200,11 +203,14 @@ def check_fsub(user_id):
         return True
     try:
         for channel in FORCE_JOIN_CHANNELS:
+            channel = channel.strip()
+            if not channel: continue
             member = bot.get_chat_member(channel, user_id)
             if member.status not in ['member', 'administrator', 'creator']:
                 return False
         return True
-    except Exception:
+    except Exception as e:
+        logger.error(f"Force join check failed: {e}")
         return False
 
 def get_profile_text_and_markup(user_id, first_name):
@@ -220,32 +226,32 @@ def get_profile_text_and_markup(user_id, first_name):
            f"<b>Hosted Files:</b> {files_count} / {limit_str}</blockquote>")
     
     markup = types.InlineKeyboardMarkup(row_width=2)
-    markup.add(types.InlineKeyboardButton("💳 My Payment", callback_data="btn_sub"),
-               types.InlineKeyboardButton("📂 My Files", callback_data="btn_files"))
-    markup.add(types.InlineKeyboardButton("📊 My Status", callback_data="btn_status"))
+    markup.add(types.InlineKeyboardButton("💳 My Payment", callback_data="btn_sub", style="primary"),
+               types.InlineKeyboardButton("📂 My Files", callback_data="btn_files", style="primary"))
+    markup.add(types.InlineKeyboardButton("📊 My Status", callback_data="btn_status", style="success"))
     return msg, markup
 
 def create_admin_panel():
     markup = types.InlineKeyboardMarkup(row_width=2)
-    markup.add(types.InlineKeyboardButton('📢 Broadcast', callback_data='admin_broadcast'),
-               types.InlineKeyboardButton('🔒 Lock Bot' if not bot_locked else '🔓 Unlock Bot', callback_data='admin_lock'))
-    markup.add(types.InlineKeyboardButton('🟢 Run All Code', callback_data='run_all_scripts'),
-               types.InlineKeyboardButton('📊 View Stats', callback_data='admin_stats'))
-    markup.add(types.InlineKeyboardButton('📂 View All Users Files', callback_data='admin_all_files'),
-               types.InlineKeyboardButton('🔍 User Details', callback_data='admin_user_details'))
+    markup.add(types.InlineKeyboardButton('📢 Broadcast', callback_data='admin_broadcast', style='primary'),
+               types.InlineKeyboardButton('🔒 Lock Bot' if not bot_locked else '🔓 Unlock Bot', callback_data='admin_lock', style='danger'))
+    markup.add(types.InlineKeyboardButton('🟢 Run All Code', callback_data='run_all_scripts', style='success'),
+               types.InlineKeyboardButton('📊 View Stats', callback_data='admin_stats', style='primary'))
+    markup.add(types.InlineKeyboardButton('📂 View All Users Files', callback_data='admin_all_files', style='primary'),
+               types.InlineKeyboardButton('🔍 User Details', callback_data='admin_user_details', style='primary'))
     return markup
 
 def create_control_buttons(script_owner_id, file_name, is_running=True):
     markup = types.InlineKeyboardMarkup(row_width=2)
     if is_running:
-        markup.row(types.InlineKeyboardButton("🔴 Stop", callback_data=f'stop_{script_owner_id}_{file_name}'),
-                   types.InlineKeyboardButton("🔄 Restart", callback_data=f'restart_{script_owner_id}_{file_name}'))
-        markup.row(types.InlineKeyboardButton("🗑️ Delete", callback_data=f'delete_{script_owner_id}_{file_name}'),
-                   types.InlineKeyboardButton("📜 Logs", callback_data=f'logs_{script_owner_id}_{file_name}'))
+        markup.row(types.InlineKeyboardButton("🔴 Stop", callback_data=f'stop_{script_owner_id}_{file_name}', style='danger'),
+                   types.InlineKeyboardButton("🔄 Restart", callback_data=f'restart_{script_owner_id}_{file_name}', style='primary'))
+        markup.row(types.InlineKeyboardButton("🗑️ Delete", callback_data=f'delete_{script_owner_id}_{file_name}', style='danger'),
+                   types.InlineKeyboardButton("📜 Logs", callback_data=f'logs_{script_owner_id}_{file_name}', style='primary'))
     else:
-        markup.row(types.InlineKeyboardButton("🟢 Start", callback_data=f'start_{script_owner_id}_{file_name}'),
-                   types.InlineKeyboardButton("🗑️ Delete", callback_data=f'delete_{script_owner_id}_{file_name}'))
-        markup.row(types.InlineKeyboardButton("📜 View Logs", callback_data=f'logs_{script_owner_id}_{file_name}'))
+        markup.row(types.InlineKeyboardButton("🟢 Start", callback_data=f'start_{script_owner_id}_{file_name}', style='success'),
+                   types.InlineKeyboardButton("🗑️ Delete", callback_data=f'delete_{script_owner_id}_{file_name}', style='danger'))
+        markup.row(types.InlineKeyboardButton("📜 View Logs", callback_data=f'logs_{script_owner_id}_{file_name}', style='primary'))
     markup.add(types.InlineKeyboardButton("🔙 Back", callback_data="btn_files"))
     return markup
 
@@ -438,10 +444,10 @@ def send_welcome(message):
     admin_reply_target.pop(user_id, None)
 
     if bot_locked and user_id != OWNER_ID:
-        return bot.reply_to(message, "<b>⚠️ Bot is currently locked by Admin. Please try again later.</b>")
+        return bot.reply_to(message, "<blockquote><b>⚠️ Bot is currently locked by Admin. Please try again later.</b></blockquote>")
     
     if not check_fsub(user_id):
-        return bot.send_message(message.chat.id, "<b>🛑 WAIT! Important Notice!</b>\n<blockquote><b>You must join our official channel to use this bot.</b></blockquote>\n<b>Click the button below to join:</b>", reply_markup=fsub_markup())
+        return bot.send_message(message.chat.id, "<b>🛑 WAIT! Important Notice!</b>\n\n<blockquote><b>You must join our official channels to use this bot.\nClick the buttons below to join, then press Verify.</b></blockquote>", reply_markup=fsub_markup())
         
     _, status_msg = check_subscription(user_id)
     msg_text = (f"<blockquote><b>👋 Hello {html.escape(message.from_user.first_name)}!</b>\n\n"
@@ -458,7 +464,7 @@ def handle_all_messages(message):
     
     # 🚨 STRICT LOCK CHECK
     if bot_locked and user_id != OWNER_ID:
-        return bot.send_message(message.chat.id, "<b>⚠️ Bot is currently locked by Admin. Please try again later.</b>")
+        return bot.send_message(message.chat.id, "<blockquote><b>⚠️ Bot is currently locked by Admin. Please try again later.</b></blockquote>")
 
     if not check_fsub(user_id): return send_welcome(message)
 
@@ -473,13 +479,13 @@ def handle_all_messages(message):
             
             if text == "📤 Upload File":
                 is_active, _ = check_subscription(user_id)
-                if not is_active: return bot.send_message(message.chat.id, "<b>🔴 Plan Expired! Buy Subscription first.</b>")
-                bot.send_message(message.chat.id, "<b>📤 Upload your `.py`, `.js`, or `.zip` file here.</b>")
+                if not is_active: return bot.send_message(message.chat.id, "<blockquote><b>🔴 Plan Expired! Buy Subscription first.</b></blockquote>")
+                bot.send_message(message.chat.id, "<blockquote><b>📤 Upload your .py, .js, or .zip file here.</b></blockquote>")
                 return
                 
             elif text == "📂 Check Files":
                 files = user_files.get(user_id, [])
-                if not files: return bot.send_message(message.chat.id, "<b>⚠️ No files uploaded yet!</b>")
+                if not files: return bot.send_message(message.chat.id, "<blockquote><b>⚠️ No files uploaded yet!</b></blockquote>")
                 markup = types.InlineKeyboardMarkup(row_width=1)
                 for fn, ft in files:
                     status = "🟢 Running" if is_bot_running(user_id, fn) else "🔴 Stopped"
@@ -495,13 +501,13 @@ def handle_all_messages(message):
             elif text == "💳 Subscription":
                 _, status_msg = check_subscription(user_id)
                 markup = types.InlineKeyboardMarkup()
-                markup.add(types.InlineKeyboardButton("💳 15 Days - ₹50", callback_data="pay_50_15"),
-                           types.InlineKeyboardButton("💳 30 Days - ₹100", callback_data="pay_100_30"))
+                markup.add(types.InlineKeyboardButton("💳 15 Days - ₹50", callback_data="pay_50_15", style="success"),
+                           types.InlineKeyboardButton("💳 30 Days - ₹100", callback_data="pay_100_30", style="success"))
                 bot.send_photo(message.chat.id, ACTION_IMAGE_URL, caption=f"<b>💎 Premium Hosting Plans</b>\n\n<blockquote><b>Your Status: {status_msg}</b></blockquote>\n\n<b>Plans:</b>\n<b>• 15 Days for ₹50</b>\n<b>• 30 Days for ₹100</b>\n\n<b>Choose your plan below:</b>", reply_markup=markup)
                 return
                 
             elif text == "❓ Help":
-                markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("💬 Chat with Admin", callback_data="chat_admin"))
+                markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("💬 Chat with Admin", callback_data="chat_admin", style="primary"))
                 bot.send_photo(message.chat.id, ACTION_IMAGE_URL, caption="<b>❓ HELP & SUPPORT</b>\n\n<blockquote><b>Click the button below to start a live chat directly with the Administrator.</b></blockquote>", reply_markup=markup)
                 return
                 
@@ -544,7 +550,7 @@ def handle_all_messages(message):
             
         try:
             bot.copy_message(OWNER_ID, message.chat.id, message.message_id)
-            markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("↩️ Reply to User", callback_data=f"reply_user_{user_id}"))
+            markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("↩️ Reply to User", callback_data=f"reply_user_{user_id}", style="primary"))
             bot.send_message(OWNER_ID, f"<b>👆 New Message From:</b> <code>{user_id}</code>", reply_markup=markup)
             bot.send_message(message.chat.id, "<b><i>✅ Message delivered to Admin. Please wait for reply... (Type /stop_chat to exit)</i></b>")
         except: pass
@@ -584,7 +590,7 @@ def handle_all_messages(message):
             ss_id = state['ss_id']
             payment_states.pop(user_id, None) 
             
-            bot.send_message(message.chat.id, "<b>⏳ Request Submitted! Admin will verify and activate your plan shortly.</b>")
+            bot.send_message(message.chat.id, "<blockquote><b>⏳ Request Submitted! Admin will verify and activate your plan shortly.</b></blockquote>")
             
             cap = (f"<b>🚨 NEW PAYMENT VERIFICATION</b>\n\n"
                    f"<blockquote><b>👤 Name: {html.escape(message.from_user.first_name)}</b>\n"
@@ -594,8 +600,8 @@ def handle_all_messages(message):
                    f"<b>🧾 UTR: <code>{utr}</code></b></blockquote>")
                    
             markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton(f"✅ Approve (₹{amt})", callback_data=f"approve_{user_id}_{days}_{amt}"),
-                       types.InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user_id}"))
+            markup.add(types.InlineKeyboardButton(f"✅ Approve (₹{amt})", callback_data=f"approve_{user_id}_{days}_{amt}", style="success"),
+                       types.InlineKeyboardButton("❌ Reject", callback_data=f"reject_{user_id}", style="danger"))
             try:
                 bot.send_photo(LOG_CHANNEL_ID, ss_id, caption=cap, reply_markup=markup)
             except Exception as e:
@@ -660,11 +666,12 @@ def callback_logic(call):
         return bot.answer_callback_query(call.id, "⚠️ Bot is currently locked by Admin.", show_alert=True)
 
     if data == "check_join":
-        bot.answer_callback_query(call.id)
         if check_fsub(user_id):
+            bot.answer_callback_query(call.id, "✅ Verified Successfully!")
             bot.delete_message(chat_id, call.message.message_id)
             send_welcome(call.message)
-        else: bot.answer_callback_query(call.id, "❌ You haven't joined the channel yet!", show_alert=True)
+        else:
+            bot.answer_callback_query(call.id, "❌ You haven't joined all channels yet! Join first then click Verify.", show_alert=True)
         return
 
     if not check_fsub(user_id): return bot.answer_callback_query(call.id, "Join Channel First!", show_alert=True)
@@ -674,8 +681,8 @@ def callback_logic(call):
         if data == "btn_sub":
             bot.answer_callback_query(call.id)
             markup = types.InlineKeyboardMarkup()
-            markup.add(types.InlineKeyboardButton("💳 15 Days - ₹50", callback_data="pay_50_15"),
-                       types.InlineKeyboardButton("💳 30 Days - ₹100", callback_data="pay_100_30"))
+            markup.add(types.InlineKeyboardButton("💳 15 Days - ₹50", callback_data="pay_50_15", style="success"),
+                       types.InlineKeyboardButton("💳 30 Days - ₹100", callback_data="pay_100_30", style="success"))
             markup.add(types.InlineKeyboardButton("🔙 Back", callback_data="btn_profile_back"))
             bot.edit_message_caption(caption=f"<b>💎 Premium Hosting Plans</b>\n\n<b>Plans:</b>\n<b>• 15 Days for ₹50</b>\n<b>• 30 Days for ₹100</b>\n\n<b>Choose your plan below:</b>", chat_id=chat_id, message_id=call.message.message_id, reply_markup=markup)
             
