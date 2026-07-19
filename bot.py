@@ -187,11 +187,10 @@ def get_reply_keyboard(user_id):
 
 def fsub_markup():
     markup = types.InlineKeyboardMarkup()
-    for ch in FORCE_JOIN_CHANNELS:
-        ch = ch.strip()
-        if not ch: continue
+    valid_channels = [ch.strip() for ch in FORCE_JOIN_CHANNELS if ch.strip()]
+    for i, ch in enumerate(valid_channels):
         markup.add(types.InlineKeyboardButton(
-            f"📢 Join {ch}",
+            f"🚀 Join Channel {i+1}",
             url=f"https://t.me/{ch.replace('@','')}",
             style="primary"
         ))
